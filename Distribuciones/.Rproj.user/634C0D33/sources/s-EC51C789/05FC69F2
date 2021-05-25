@@ -1,0 +1,28 @@
+{
+    "id": "05FC69F2",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1621858078535.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "id": "21331591da2541ecbb7ed0ad0d47f9f6",
+        "name": "resultados13",
+        "title": "resultados13",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1621857588,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1621858078535,
+    "read_only": false,
+    "read_only_alternatives": []
+}
