@@ -4,6 +4,7 @@ from obtener_bases_centros import obtener_bases, obtener_centros
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import sys
 
 
 class ClaseGrafo(object):
@@ -72,16 +73,32 @@ class ClaseGrafo(object):
         return nodo_minimo
 
     def calcular_centro_mas_cercano(self, ubicacion_actual):
+        tiempo_total = time.time()
         minuto_minimo = np.Infinity
         centro_ganador = None
         ruta_ganadora = None
-        for coordenada in self.centros.values():
+        dict_nodocentro_distanciaeuclidiana = {}
+
+        for coordenada_centro in self.centros.values():
+            distancia_euclidiana = np.linalg.norm(np.array(self.coordenadas_nodos[ubicacion_actual]) - np.array(coordenada_centro))
+            dict_nodocentro_distanciaeuclidiana[coordenada_centro] = distancia_euclidiana
+        dict_nodocentro_distanciaeuclidiana = {k: v for k, v in sorted(dict_nodocentro_distanciaeuclidiana.items(), key=lambda item: item[1])}
+
+        iterador = 0
+        coordenadas_centros_cercanos = []
+        for key, value in dict_nodocentro_distanciaeuclidiana.items():
+            if iterador == 10:
+                break
+            coordenadas_centros_cercanos.append(key)
+            iterador += 1
+
+        for coordenada in coordenadas_centros_cercanos:
             nodo_cercano_al_centro = self.calcular_nodo_cercano(coordenada)
             ruta, minutos_demorados = self.calcular_dijkstra(ubicacion_actual, nodo_cercano_al_centro)
             if minutos_demorados < minuto_minimo:
                 minuto_minimo = minutos_demorados
-                ruta_ganadora = ruta
                 centro_ganador = nodo_cercano_al_centro
+                ruta_ganadora = ruta
         return centro_ganador, ruta_ganadora, minuto_minimo
 
     def actualizar_arcos(self, hora_actual):

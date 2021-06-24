@@ -7,6 +7,8 @@ from generacion_llamadas import generar_tev, generar_ubicacion
 import numpy as np
 import sys
 from termcolor import colored
+from multiprocessing import Process
+from filtrar_eventos import random_sged
 
 
 def hora_actual(minutos_transcurridos):
@@ -32,9 +34,9 @@ class Ambulancia:
         self.comenzar = self.env.process(self.esperando_llamado())
 
     def esperando_llamado(self):
-        print(f"Ambulancia {self.id}: Esperando llamado de emergencia en {self.env.now}")
+        print(f"Ambulancia {self.id}: Esperando llamado de emergencia en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
         yield self.linea_ambulancia
-        print(f"Ambulancia {self.id}: Atendiendo llamado en {self.env.now}")
+        print(f"Ambulancia {self.id}: Atendiendo llamado en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
         ruta_emergencia = self.linea_ambulancia.value["ruta"]
         tiempo_emergencia = self.linea_ambulancia.value["tiempo"]
         self.ocupada = True
@@ -42,42 +44,55 @@ class Ambulancia:
         self.env.process(self.moverse_a_destino(ruta_emergencia, tiempo_emergencia))
 
     def moverse_a_destino(self, ruta_emergencia, tiempo_emergencia):
-        nodo_destino = ruta_emergencia[-1]
-        print(f"Ambulancia {self.id}: Mi ruta será {ruta_emergencia}")
-        print(f"Ambulancia {self.id}: Se estima tardará {tiempo_emergencia} minutos en llegar")
-        yield self.env.timeout(tiempo_emergencia)
-        print(f'\nAmbulancia {self.id}: Llegué al destino en {self.env.now}')
-        self.estadisticas["tiempo_acumulado_despacho"].append(tiempo_emergencia)
-        self.tiempo_proceso_actual += tiempo_emergencia
-
-        self.ubicacion_actual = nodo_destino
+        print(f"Ambulancia {self.id}: Se estima tardará {tiempo_emergencia} en llegar desde {self.ubicacion_actual} a {ruta_emergencia[-1]}")
+        tiempo_acumulado_despacho = 0
+        ruta_emergencia.pop(0)
+        while ruta_emergencia:
+            nodo_destino = ruta_emergencia[0]
+            tiempo_desplazamiento = self.grafo.grafo[self.ubicacion_actual][nodo_destino]['weight']
+            yield self.env.timeout(tiempo_desplazamiento)
+            tiempo_acumulado_despacho += tiempo_desplazamiento
+            self.ubicacion_actual = nodo_destino
+            ruta_emergencia.pop(0)
+        self.estadisticas["tiempo_acumulado_despacho"].append(tiempo_acumulado_despacho)
+        print()
+        if tiempo_acumulado_despacho != tiempo_emergencia:
+            print(f"Ambulancia {self.id}: La estimación no fue correcta - Estimado {tiempo_emergencia} vs Real: {tiempo_acumulado_despacho}")
+        self.tiempo_proceso_actual += tiempo_acumulado_despacho
+        print(f'Ambulancia {self.id}: Llegué al destino en {hora_actual(self.env.now).format("DD-MM HH:mm:ss")} y atenderé al paciente')
         self.env.process(self.atender_paciente())
 
     def atender_paciente(self):
-        print(f'Ambulancia {self.id}: Voy a atender al paciente')
-        tev_gaussiano = np.random.wald(mean=16.48, scale=35.64)
-        yield self.env.timeout(tev_gaussiano)  #
-        print(f"\nAmbulancia {self.id}: Terminé de atender al paciente en {self.env.now}, ahora hay que derivarlo")
-        self.estadisticas["tiempo_acumulado_atencion"].append(tev_gaussiano)
-        self.tiempo_proceso_actual += tev_gaussiano
+        tev_sged = random_sged()
+        yield self.env.timeout(tev_sged)  #
+        print(f"\nAmbulancia {self.id}: Terminé de atender al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}, ahora hay que derivarlo")
+        self.estadisticas["tiempo_acumulado_atencion"].append(tev_sged)
+        self.tiempo_proceso_actual += tev_sged
         self.env.process(self.derivar_paciente())
 
     def derivar_paciente(self):
         centro_ganador, ruta_ganadora, tiempo_derivacion = self.grafo.calcular_centro_mas_cercano(self.ubicacion_actual)
         print(f"Ambulancia {self.id}: Tengo que ir al centro cercano al nodo: {centro_ganador}")
-        print(f"Ambulancia {self.id}: Mi ruta será {ruta_ganadora}")
         print(f"Ambulancia {self.id}: Estimo me tardaré {tiempo_derivacion} minutos")
 
-        yield self.env.timeout(tiempo_derivacion)
-        print(f"\nAmbulancia {self.id}: Ya derivé al paciente en {self.env.now}")
-        self.estadisticas["tiempo_acumulado_derivacion"].append(tiempo_derivacion)
-        self.tiempo_proceso_actual += tiempo_derivacion
+        tiempo_acumulado_derivacion = 0
+        ruta_ganadora.pop(0)
+        while ruta_ganadora:
+            nodo_destino = ruta_ganadora[0]
+            tiempo_desplazamiento = self.grafo.grafo[self.ubicacion_actual][nodo_destino]['weight']
+            yield self.env.timeout(tiempo_desplazamiento)
+            tiempo_acumulado_derivacion += tiempo_desplazamiento
+            self.ubicacion_actual = nodo_destino
+            ruta_ganadora.pop(0)
+
+        print(f"\nAmbulancia {self.id}: Ya derivé al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
+        self.estadisticas["tiempo_acumulado_derivacion"].append(tiempo_acumulado_derivacion)
+        self.tiempo_proceso_actual += tiempo_acumulado_derivacion
         self.estadisticas["tiempo_acumulado_proceso"].append(self.tiempo_proceso_actual)
         self.tiempo_proceso_actual = 0
 
         self.ocupada = False
         self.linea_ambulancia = self.env.event()
-        self.ubicacion_actual = centro_ganador
 
         if len(self.cola_emergencias) > 0:
             print(colored('Hay un paciente esperando su ambulancia, buscaré al más cercano', 'yellow'))
@@ -92,10 +107,11 @@ class Ambulancia:
                     mejor_tiempo_ida = tiempo_ida
                     mejor_ruta_ida = ruta_ida
                     emergencia_seleccionada = emergencia
-            self.cola_emergencias.remove(emergencia_seleccionada)
 
+            self.cola_emergencias.remove(emergencia_seleccionada)
             tiempo_atraso = self.env.now - emergencia_seleccionada["hora_emergencia"]
-            print(f"Ambulancia {self.id}: Atendiendo llamado en {self.env.now} con un atraso de {tiempo_atraso} minutos")
+            print(
+                f"Ambulancia {self.id}: Atendiendo llamado en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')} con un atraso de {tiempo_atraso} minutos")
             self.estadisticas["tiempo_acumulado_espera"].append(tiempo_atraso)
             self.tiempo_proceso_actual += tiempo_atraso
             self.ocupada = True
@@ -108,11 +124,44 @@ class Ambulancia:
 
     def volver_a_base_original(self):
         ruta, tiempo_regreso = self.grafo.calcular_dijkstra(self.ubicacion_actual, self.base_original)
-        print(f"Ambulancia {self.id}: Mi ruta será {ruta}")
-        print(f"Ambulancia {self.id}: Me tardaré {tiempo_regreso} minutos")
-        yield self.env.timeout(tiempo_regreso)
-        print(f"\nAmbulancia {self.id}: Llegué a la base original en {hora_actual(self.env.now)}")
-        self.ubicacion_actual = self.base_original
+        print(f"Ambulancia {self.id}: Estimo me tardaré {tiempo_regreso} minutos")
+
+        tiempo_acumulado_retorno = 0
+        ruta.pop(0)
+        while ruta:
+            nodo_destino = ruta[0]
+            tiempo_desplazamiento = self.grafo.grafo[self.ubicacion_actual][nodo_destino]['weight']
+            yield self.env.timeout(tiempo_desplazamiento)
+            tiempo_acumulado_retorno += tiempo_desplazamiento
+            self.ubicacion_actual = nodo_destino
+            ruta.pop(0)
+
+            if len(self.cola_emergencias) > 0:
+                print(colored('Hay un paciente esperando ambulancia, cancelo regreso y voy a buscarlo', 'yellow'))
+                mejor_tiempo_ida = np.Infinity
+                mejor_ruta_ida = None
+                emergencia_seleccionada = None
+
+                for emergencia in self.cola_emergencias:
+                    nodo_cercano = self.grafo.calcular_nodo_cercano(emergencia["coordenadas"])
+                    ruta_ida, tiempo_ida = self.grafo.calcular_dijkstra(self.ubicacion_actual, nodo_cercano)
+                    if tiempo_ida < mejor_tiempo_ida:
+                        mejor_tiempo_ida = tiempo_ida
+                        mejor_ruta_ida = ruta_ida
+                        emergencia_seleccionada = emergencia
+
+                self.cola_emergencias.remove(emergencia_seleccionada)
+                tiempo_atraso = self.env.now - emergencia_seleccionada["hora_emergencia"]
+                print(f"Ambulancia {self.id}: Atendiendo llamado en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}"
+                      f" con un atraso de {tiempo_atraso} minutos")
+                self.estadisticas["tiempo_acumulado_espera"].append(tiempo_atraso)
+                self.tiempo_proceso_actual += tiempo_atraso
+                self.ocupada = True
+
+                self.env.process(self.moverse_a_destino(mejor_ruta_ida, mejor_tiempo_ida))
+                return
+
+        print(f"\nAmbulancia {self.id}: Llegué a la base original en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
         self.ocupada = False
         self.env.process(self.esperando_llamado())
 
@@ -141,8 +190,8 @@ class Simulacion:
 
         self.env.process(self.llamadas())
         self.env.process(self.actualizar_velocidades())
-        self.env.run(until=self.cantidad_dias(7))
-        print(colored(f"\nSimulación terminada en: {hora_actual(self.env.now)}", "green"))
+        self.env.run(until=self.cantidad_dias(1))
+        print(colored(f"\nSimulación terminada en: {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}", "green"))
         self.presentar_estadisticas()
 
     @staticmethod
@@ -152,12 +201,16 @@ class Simulacion:
     def llamadas(self):
         while True:
             tiempo_emergencia = generar_tev(hora_actual(self.env.now))
-            coords_emergencia = generar_ubicacion("datos/eventos.csv")
+            coords_emergencia = generar_ubicacion("datos/eventos.csv", hora_actual(self.env.now))
             yield self.env.timeout(tiempo_emergencia)
             print()
-            print(f"Llegó un llamado en {hora_actual(self.env.now)}, tengo que mandar ambulancia")
+            print(f"Llegó llamado en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}, tengo que mandar ambulancia")
+            print(f"Hay {sum(1 for ambulance in self.total_ambulancias if not ambulance.ocupada)} ambulancias libres")
+
             self.estadisticas["llamadas_recibidas"] += 1
+
             nodo_emergencia = self.grafo.calcular_nodo_cercano(coords_emergencia)
+
             ambulancia_elegida = None
             tiempo_despacho_elegido = np.Infinity
             ruta_despacho_elegido = None
@@ -205,8 +258,25 @@ class Simulacion:
         print(colored(f"Quedaron {len(self.cola_emergencias)} pacientes sin atender", "red"))
 
 
+def iniciar_simulacion():
+    global fecha_inicial
+    fecha_inicial = arrow.get('2021-01-01T00:00:00')
+    Simulacion()
+
+
 if __name__ == '__main__':
     start_time = time.time()
     fecha_inicial = arrow.get('2021-01-01T00:00:00')
+
     Simulacion()
+
+    # lista_simulaciones = []
+    # for i in range(7):
+    #     este_proceso = Process(target=iniciar_simulacion)
+    #     lista_simulaciones.append(este_proceso)
+    #     este_proceso.start()
+    #
+    # for proceso in lista_simulaciones:
+    #     proceso.join()
+
     print(colored(f"\n IRL Exec: {(time.time() - start_time) / 60} minutos", 'blue'))

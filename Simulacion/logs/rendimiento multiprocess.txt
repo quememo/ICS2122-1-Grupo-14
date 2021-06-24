@@ -1,0 +1,4 @@
+7 aprox * 1 nucleo = 2.687958558400472 minutos
+2 aprox * 1 nucleo = 0.8483666777610779 minutos
+2 dias * 3 nucleos = 1.0636872132619222 minutos
+2 dias * 4 nucleos = 1.0862499753634134 minutos

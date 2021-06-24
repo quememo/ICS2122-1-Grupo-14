@@ -1,6 +1,31 @@
 import pandas as pd
 import numpy as np
 import sys
+from random import randint
+import seaborn as sns
+import matplotlib.pyplot as plt
+import time
+
+
+def alterar_atencion():
+    pandas_eventos = pd.read_csv("./datos/eventos.csv", sep=";")
+    numpy_eventos = pandas_eventos.to_numpy()
+    solo_atenciones = [(evento[4] - 4.2) for evento in numpy_eventos]
+    pd.DataFrame(solo_atenciones).to_csv(path_or_buf=f"datos modificados/solo_atenciones_desplazadas.csv", index=False, header=["NEWATENCION"], sep=";")
+
+
+def filtrar_muestra():
+    pandas_muestra = pd.read_csv("./datos/muestraSGED.csv", sep=",")
+    df_filtrados = pandas_muestra.loc[pandas_muestra['x'] <= 46.7]
+    df_filtrados.to_csv(path_or_buf=f"datos/muestraSGEDfiltrada.csv", index=False, header=["Atenciones"], sep=";")
+
+
+def random_sged():
+    pandas_muestra = pd.read_csv("./datos/muestraSGEDfiltrada.csv", sep=",")
+    numpy_filtrados = pandas_muestra.to_numpy()
+    lista_filtrado = [atencion[0] for atencion in numpy_filtrados]
+    random_atencion = lista_filtrado[randint(0, len(lista_filtrado) - 1)]
+    return random_atencion
 
 
 def agregar_clusters():
@@ -137,5 +162,6 @@ def obtener_tiempo_entre_eventos():
 
 if __name__ == '__main__':
     # agregar_clusters()
-    obtener_tiempo_entre_eventos()
+    # obtener_tiempo_entre_eventos()
+    # alterar_atencion()
     pass

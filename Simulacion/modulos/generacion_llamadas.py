@@ -5,11 +5,17 @@ from random import randint, uniform
 from math import cos, sin
 import matplotlib.pyplot as plt
 import arrow
+import sys
 
 
-def generar_ubicacion(nombre_archivo_eventos):
+def generar_ubicacion(nombre_archivo_eventos, arrow_actual):
+    hora_actual = str(arrow_actual.hour)
+    if len(hora_actual) == 1:
+        hora_actual = f"0{hora_actual}"
     pandas_eventos = pd.read_csv(nombre_archivo_eventos, sep=";")
-    numpy_eventos = pandas_eventos.to_numpy()
+    df_filtrados = pandas_eventos.loc[(pandas_eventos['HORARIO'] >= f"{hora_actual}:00") & (pandas_eventos['HORARIO'] <= f"{hora_actual}:59")]
+    # print(df_filtrados.to_string())
+    numpy_eventos = df_filtrados.to_numpy()
 
     evento_aleatorio = numpy_eventos[randint(0, len(numpy_eventos) - 1)]
     coords_evento = (evento_aleatorio[0], evento_aleatorio[1])
