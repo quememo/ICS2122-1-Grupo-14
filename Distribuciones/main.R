@@ -117,7 +117,6 @@ tev5_AIC <- AIC(mlbetapr(tev5$TEV),
 mlexp(tev5$TEV)
 mlgamma(tev5$TEV)
 ad.test(tev5$TEV, "pexp",  rate = 0.01471  )
-ad.test(tev5$TEV, "pgamma",  shape = 0.89118, rate = 0.01311 )
 
 hist(tev6$TEV, main = "Tiempo entre eventos entre 06:00 y 06:59", freq = FALSE, breaks = 100)
 lines(mlgamma(tev6$TEV), lwd = 2, col = "red")
@@ -215,23 +214,32 @@ qqmlline(tev23$TEV, mlgamma, datax = TRUE)
 #TIEMPOS DE ATENCION
 
 eventos = read.csv2(file='../Simulacion/datos/eventos.csv', dec = '.')
+summary(eventos$ATENCION)
 
 model_select(eventos$ATENCION, models = modelos_sin_naka, criterion = c("aic"))
+
+
 mlsged(eventos$ATENCION)
 mlinvgauss(eventos$ATENCION)
 ad.test(eventos$ATENCION, null= "psged", mean = 16.534, sd=10.181 ,  nu = 1.547, xi = 76.760)
 ad.test(eventos$ATENCION, null= "pinvgauss" , mean = 16.48 , shape= 35.64 )
 
-hist(eventos$ATENCION, main = "Histograma tiempos de atención", freq = FALSE, breaks = 50, xlim = c(0, 50), xlab="Minutos", ylab="Densidad")
+
+hist(eventos$ATENCION, main = "Histograma tiempos de atención", freq = FALSE, breaks = 50, xlim = c(0, 50),ylim = c(0,0.06), xlab="Minutos", ylab="Densidad")
+
 lines(mlinvgauss(eventos$ATENCION), lwd = 2, col = "blue")
 lines(dsged(c(0:100),mean = 16.534, sd=10.181 ,  nu = 1.547, xi = 76.760), lwd=2, col= "red")
+lines(dsged(c(0:100),mean = 12.334, sd=10.181 ,  nu = 1.547, xi = 76.770), lwd=2, col= "red")
 legend("topright", legend=c("Distribución de Error Generalizado Sesgado", "Distribución Gaussiana Inversa"),
        col=c("red", "blue"), lty=1:1, lwd = 2)
 
+
+
+
 diezmilRSGED <- rsged(10000, mean = 16.534, sd=10.181 ,  nu = 1.547, xi = 76.760)
-diezmilINVGAUSS <- rinvgauss(10000, mean = 16.48 , shape= 35.64)
 summary(diezmilRSGED)
-summary(diezmilINVGAUSS)
+write.csv(diezmilRSGED,'muestraSGED.csv', row.names = FALSE)
+hist(diezmilRSGED, main = "Histograma SGED", freq = FALSE, breaks = 50, xlim = c(0, 50),ylim = c(0,0.06), xlab="Minutos", ylab="Densidad")
 
 qqmlplot(eventos$ATENCION, mlinvgauss, datax = TRUE, main = "QQ Plot ")
 qqmlline(eventos$ATENCION, mlinvgauss, datax = TRUE)
@@ -259,7 +267,7 @@ comparacion_akaik <- AIC(
     mlpower(eventos$ATENCION)
 )
 
-# ORO PURO
+# Stats Atencion
 
 fit.SGED <- fitdist(eventos$ATENCION, method = "mle", distr="sged", start = list(mean = 16.534, sd=10.181 ,  nu = 1.547, xi = 76.760  ))
 plot(fit.SGED)
@@ -273,29 +281,105 @@ gofstat(fit.INVGAUSSIANA)
 
 fit_tev0 <- fitdist(tev0$TEV, method = "mle", distr="gamma", start = list(shape = 0.824484, rate = 0.002855))
 plot(fit_tev0)
-resultados0 <- gofstat(fit_tev0)
+gofstat(fit_tev0)
+
+fit_tev1 <- fitdist(tev1$TEV, method = "mle", distr="exp", start = list(rate = 0.005502))
+plot(fit_tev1)
+gofstat(fit_tev1)
 
 fit_tev2 <- fitdist(tev2$TEV, method = "mle", distr="exp", start = list(rate = 0.00725))
 plot(fit_tev2)
-resultados2<-gofstat(fit_tev2)
+gofstat(fit_tev2)
+
+fit_tev3 <- fitdist(tev3$TEV, method = "mle", distr="gamma", start = list(shape = 1.27188, rate = 0.01207))
+plot(fit_tev3)
+gofstat(fit_tev3)
+
+fit_tev4 <- fitdist(tev4$TEV, method = "mle", distr="exp", start = list(rate = 0.01432))
+plot(fit_tev4)
+gofstat(fit_tev4)
+
+fit_tev5 <- fitdist(tev5$TEV, method = "mle", distr="exp", start = list(rate = 0.01471))
+plot(fit_tev5)
+gofstat(fit_tev5)
+
 
 fit_tev6 <- fitdist(tev6$TEV, method = "mle", distr="gamma", start = list(shape = 0.82603, rate =  0.01754))
 plot(fit_tev6)
-resultados6<-gofstat(fit_tev6)
+gofstat(fit_tev6)
 
 fit_tev7 <- fitdist(tev7$TEV, method = "mle", distr="gamma", start = list(shape = 0.76578, rate =  0.06982))
 plot(fit_tev7)
-resultados7<-gofstat(fit_tev7)
+gofstat(fit_tev7)
 
 fit_tev8 <- fitdist(tev8$TEV, method = "mle", distr="gamma", start = list(shape = 0.69389, rate =  0.07052))
 plot(fit_tev8)
-resultados8<-gofstat(fit_tev8)
 gofstat(fit_tev8)
+
+fit_tev9 <- fitdist(tev9$TEV, method = "mle", distr="gamma", start = list(shape = 0.62622, rate =  0.06599))
+plot(fit_tev9)
+gofstat(fit_tev9)
+
 
 fit_tev10 <- fitdist(tev10$TEV, method = "mle", distr="gamma", start = list(shape = 0.62801, rate = 0.06811))
 plot(fit_tev10)
 gofstat(fit_tev10)
 
-fit_tev13 <- fitdist(tev13$TEV, method = "mle", distr="gamma", start = list(shape = 0.73307, rate = 0.06331))
+
+
+
+
+
+
+
+fit_tev11 <- fitdist(tev11$TEV, method = "mle", distr="gamma", start = list(shape = 0.63640, rate = 0.06274))
+plot(fit_tev11)
+gofstat(fit_tev11)
+
+fit_tev12 <- fitdist(tev12$TEV, method = "mle", distr="gamma", start = list(shape = 0.66237, rate = 0.06084))
+plot(fit_tev12)
+gofstat(fit_tev12)
+
+fit_tev13 <- fitdist(tev13$TEV, method = "mle", distr="gamma", start = list(shape= 0.73307, rate =  0.06331 ))
 plot(fit_tev13)
 gofstat(fit_tev13)
+
+fit_tev14 <- fitdist(tev14$TEV, method = "mle", distr="gamma", start = list(shape= 0.7082, rate =  0.0562))
+plot(fit_tev14)
+gofstat(fit_tev14)
+
+fit_tev15 <- fitdist(tev15$TEV, method = "mle", distr="gamma", start = list(shape = 0.77401, rate =  0.05628))
+plot(fit_tev15)
+gofstat(fit_tev15)
+
+fit_tev16 <- fitdist(tev16$TEV, method = "mle", distr="gamma", start = list(shape= 0.70061  , rate =  0.04434))
+plot(fit_tev16)
+gofstat(fit_tev16)
+
+fit_tev17 <- fitdist(tev17$TEV, method = "mle", distr="gamma", start = list(shape= 0.77431, rate =  0.04419))
+plot(fit_tev17)
+gofstat(fit_tev17)
+
+fit_tev18 <- fitdist(tev18$TEV, method = "mle", distr="gamma", start = list(shape= 0.77036  , rate =  0.02449))
+plot(fit_tev18)
+gofstat(fit_tev18)
+
+fit_tev19 <- fitdist(tev19$TEV, method = "mle", distr="gamma", start = list(shape= 0.77329  , rate =  0.02159))
+plot(fit_tev19)
+gofstat(fit_tev19)
+
+fit_tev20 <- fitdist(tev20$TEV, method = "mle", distr="exp", start = list(rate = 0.02225))
+plot(fit_tev20)
+gofstat(fit_tev20)
+
+fit_tev21 <- fitdist(tev21$TEV, method = "mle", distr="exp", start = list(rate = 0.02002 ))
+plot(fit_tev21)
+gofstat(fit_tev21)
+
+fit_tev22 <- fitdist(tev22$TEV, method = "mle", distr="gamma", start = list(shape= 0.86502  , rate =  0.01323))
+plot(fit_tev22)
+gofstat(fit_tev22)
+
+fit_tev23 <- fitdist(tev23$TEV, method = "mle", distr="gamma", start = list(shape= 0.90140  , rate =  0.01195))
+plot(fit_tev23)
+gofstat(fit_tev23)
