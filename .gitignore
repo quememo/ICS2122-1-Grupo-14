@@ -31,4 +31,4 @@ yarn-error.log*
 .env
 
 # R stuff
-Distribuciones/.Rproj.user/
+.idea
