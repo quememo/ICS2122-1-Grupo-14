@@ -16,8 +16,8 @@ class ClaseGrafo(object):
 
     def poblar_grafo(self):
         self.informacion_nodos, self.coordenadas_nodos = diccionario_nodos(
-            "K:/UC/11 semestre/capstone industrial/Simulacion/datos/nodos.csv",
-            "K:/UC/11 semestre/capstone industrial/Simulacion/datos/arcos.csv")
+            "K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/nodos.csv",
+            "K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/arcos.csv")
         for nodo_origen in self.informacion_nodos:
             for nodo_destino in self.informacion_nodos[nodo_origen].keys():
                 esta_distancia = self.informacion_nodos[nodo_origen][nodo_destino]["distancia"]
@@ -27,12 +27,12 @@ class ClaseGrafo(object):
                 self.grafo.add_edge(nodo_origen, nodo_destino, weight=estos_minutos)
 
         self.bases = obtener_bases()
-        for base in self.bases:
-            self.grafo.add_node(base)
+        # for base in self.bases:
+        #     self.grafo.add_node(base)
 
         self.centros = obtener_centros()
-        for centro in self.centros:
-            self.grafo.add_node(centro)
+        # for centro in self.centros:
+        #     self.grafo.add_node(centro)
 
     def plotear_grafo(self):
         # Descomentar cuando quiera graficar el plot
@@ -47,11 +47,11 @@ class ClaseGrafo(object):
                          arrowsize=5,
                          node_size=10,
                          font_size=8,
-                         with_labels=False,
+                         with_labels=True,
                          node_color="#3da98d",
                          )
         plt.show()
-        plt.savefig("fotofinal.png")
+        # plt.savefig("fotofinal.png")
 
     def calcular_dijkstra(self, origen, destino):
         # Origen y Destino son ID's de nodo, NO COORDENADAS
