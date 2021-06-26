@@ -76,11 +76,11 @@ class Ambulancia:
                 self.env.process(self.volver_a_base_original())
                 return
 
-        tiempo_despacho_real = self.env.now - self.time_atendido
-        print(f"Ambulancia {self.id}: Se tardó {tiempo_despacho_real} en despachar, estimado de esta: {tiempo_emergencia}")
-        self.estadisticas["tiempo_acumulado_despacho"].append(tiempo_despacho_real)
+        tiempo_ida_real = self.env.now - self.time_atendido
+        print(f"Ambulancia {self.id}: Se tardó {tiempo_ida_real} en despachar, estimado de esta: {tiempo_emergencia}")
+        self.estadisticas["tiempo_acumulado_ida"].append(tiempo_ida_real)
         print()
-        self.tiempo_proceso_actual += tiempo_despacho_real
+        self.tiempo_proceso_actual += tiempo_ida_real
         print(f'Ambulancia {self.id}: Llegué al destino en {hora_actual(self.env.now).format("DD-MM HH:mm:ss")} y atenderé al paciente')
         self.en_ida = False
         self.destino_actual = None
@@ -89,29 +89,29 @@ class Ambulancia:
     def atender_paciente(self):
         tev_sged = random_sged()
         yield self.env.timeout(tev_sged)  #
-        print(f"\nAmbulancia {self.id}: Terminé de atender al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}, ahora hay que derivarlo")
+        print(f"\nAmbulancia {self.id}: Terminé de atender al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}, ahora hay que trasladarlo")
         self.estadisticas["tiempo_acumulado_atencion"].append(tev_sged)
         self.tiempo_proceso_actual += tev_sged
-        self.env.process(self.derivar_paciente())
+        self.env.process(self.trasladar_paciente())
 
-    def derivar_paciente(self):
-        centro_ganador, ruta_ganadora, tiempo_derivacion = self.grafo.calcular_centro_mas_cercano(self.ubicacion_actual)
+    def trasladar_paciente(self):
+        centro_ganador, ruta_ganadora, tiempo_traslado = self.grafo.calcular_centro_mas_cercano(self.ubicacion_actual)
         print(f"Ambulancia {self.id}: Tengo que ir al centro cercano al nodo: {centro_ganador}")
-        print(f"Ambulancia {self.id}: Estimo me tardaré {tiempo_derivacion} minutos en derivar")
+        print(f"Ambulancia {self.id}: Estimo me tardaré {tiempo_traslado} minutos en trasladar paciente")
 
-        tiempo_acumulado_derivacion = 0
+        tiempo_acumulado_traslado = 0
         ruta_ganadora.pop(0)
         while ruta_ganadora:
             nodo_destino = ruta_ganadora[0]
             tiempo_desplazamiento = self.grafo.grafo[self.ubicacion_actual][nodo_destino]['weight']
             yield self.env.timeout(tiempo_desplazamiento)
-            tiempo_acumulado_derivacion += tiempo_desplazamiento
+            tiempo_acumulado_traslado += tiempo_desplazamiento
             self.ubicacion_actual = nodo_destino
             ruta_ganadora.pop(0)
 
-        print(f"\nAmbulancia {self.id}: Ya derivé al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
-        self.estadisticas["tiempo_acumulado_derivacion"].append(tiempo_acumulado_derivacion)
-        self.tiempo_proceso_actual += tiempo_acumulado_derivacion
+        print(f"\nAmbulancia {self.id}: Ya trasladé al paciente en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}")
+        self.estadisticas["tiempo_acumulado_traslado"].append(tiempo_acumulado_traslado)
+        self.tiempo_proceso_actual += tiempo_acumulado_traslado
         self.estadisticas["tiempo_acumulado_proceso"].append(self.tiempo_proceso_actual)
         self.tiempo_proceso_actual = 0
         self.time_atendido = None
@@ -126,6 +126,8 @@ class Ambulancia:
         if len(self.cola_emergencias) > 0:
             print(colored(f"Ambulancia {self.id}: No regresaré a la base, hay llamadas en cola", 'yellow'))
             self.atender_cola_emergencia()
+
+
         else:
             print(f"Ambulancia {self.id}: Estoy libre, vuelvo a la base original")
 
@@ -171,6 +173,7 @@ class Ambulancia:
         tiempo_atraso = self.env.now - emergencia_seleccionada["hora_emergencia"]
         print(f"Ambulancia {self.id}: Atendiendo llamado en {hora_actual(self.env.now).format('DD-MM HH:mm:ss')}"
               f" con un atraso de {tiempo_atraso} minutos")
+        self.emergencia_en_curso = self.estadisticas["llamadas_recibidas"]
         self.time_atendido = self.env.now
         self.estadisticas["tiempo_acumulado_espera"].append(tiempo_atraso)
         self.tiempo_proceso_actual += tiempo_atraso
@@ -178,12 +181,12 @@ class Ambulancia:
         self.env.process(self.moverse_a_destino(mejor_ruta_ida, mejor_tiempo_ida))
 
     def robar_emergencia(self):
+        status = None
         ambulancia_target = None
         ganancia_target = 0
         tiempo_final = None
         ruta_final = None
         tiempo_restante_final = 0
-
         for ambulancia in self.total_ambulancias:
             if ambulancia.en_ida and ambulancia.id != self.id:
                 new_ruta_ida, new_tiempo_ida = self.grafo.calcular_dijkstra(self.ubicacion_actual, ambulancia.destino_actual)
@@ -197,9 +200,9 @@ class Ambulancia:
                     tiempo_restante_final = tiempo_restante
 
         if ambulancia_target:
-            print(f'Ambulancia {self.id}: Logré robarle a Ambulancia {ambulancia_target.id} la emergencia {ambulancia_target.emergencia_en_curso}')
-            print(f"Ambulancia {self.id}: Esta ambulancia le faltaba {tiempo_restante_final} para llegar")
-            print(f"Ambulancia {self.id}: Tengo una ganancia de {ganancia_target}")
+            print(f'Ambulancia {self.id}: Podría robar a Ambulancia {ambulancia_target.id} la emergencia {ambulancia_target.emergencia_en_curso}')
+            print(f"Ambulancia {self.id}: Esta ambulancia le falta {tiempo_restante_final} para llegar")
+            print(f"Ambulancia {self.id}: Tendría una ganancia de {ganancia_target}")
             self.emergencia_en_curso = ambulancia_target.emergencia_en_curso
             ambulancia_target.abortar = True
             ambulancia_target.en_ida = False
@@ -222,21 +225,21 @@ class Simulacion:
         self.grafo.informacion_nodos.keys()
         self.cola_emergencias = []
         self.estadisticas = {
-            "tiempo_acumulado_despacho": [],
+            "tiempo_acumulado_ida": [],
             "tiempo_acumulado_atencion": [],
-            "tiempo_acumulado_derivacion": [],
+            "tiempo_acumulado_traslado": [],
             "tiempo_acumulado_espera": [],
-            "tiempo_acumulado_proceso": [],  # espera inicial + despacho + atencion + derivacion por cada emergencia
+            "tiempo_acumulado_proceso": [],  # espera inicial + despacho + ida + atencion + traslado + derivacion por cada emergencia
             "llamadas_recibidas": 0,
         }
         self.dias_terminados = 0
 
         self.stat_diario = {
-            "mean": pd.DataFrame(columns=["TIEMPO_DESPACHO", "TIEMPO_ATENCION", "TIEMPO_DERIVACION", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
-            "25%": pd.DataFrame(columns=["TIEMPO_DESPACHO", "TIEMPO_ATENCION", "TIEMPO_DERIVACION", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
-            "50%": pd.DataFrame(columns=["TIEMPO_DESPACHO", "TIEMPO_ATENCION", "TIEMPO_DERIVACION", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
-            "75%": pd.DataFrame(columns=["TIEMPO_DESPACHO", "TIEMPO_ATENCION", "TIEMPO_DERIVACION", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
-            "90%": pd.DataFrame(columns=["TIEMPO_DESPACHO", "TIEMPO_ATENCION", "TIEMPO_DERIVACION", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
+            "mean": pd.DataFrame(columns=["TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
+            "25%": pd.DataFrame(columns=["TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
+            "50%": pd.DataFrame(columns=["TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
+            "75%": pd.DataFrame(columns=["TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
+            "90%": pd.DataFrame(columns=["TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_ATRASO", "TIEMPO_PROCESO"]),
         }
 
         self.nodos_iniciales = [0, 3, 5, 6, 16, 18, 2151, 20, 21, 2163, 3299, 38, 41, 46, 48, 58, 63, 908, 68, 3305]
@@ -270,15 +273,15 @@ class Simulacion:
             nodo_emergencia = self.grafo.calcular_nodo_cercano(coords_emergencia)
 
             ambulancia_elegida = None
-            tiempo_despacho_elegido = np.Infinity
-            ruta_despacho_elegido = None
+            tiempo_ida_elegido = np.Infinity
+            ruta_ida_elegido = None
 
             for ambulancia in self.total_ambulancias:
                 if not ambulancia.ocupada:
-                    ruta_despacho_ambulancia, tiempo_despacho_ambulancia = self.grafo.calcular_dijkstra(ambulancia.ubicacion_actual, nodo_emergencia)
-                    if tiempo_despacho_ambulancia < tiempo_despacho_elegido:
-                        tiempo_despacho_elegido = tiempo_despacho_ambulancia
-                        ruta_despacho_elegido = ruta_despacho_ambulancia
+                    ruta_ida_ambulancia, tiempo_ida_ambulancia = self.grafo.calcular_dijkstra(ambulancia.ubicacion_actual, nodo_emergencia)
+                    if tiempo_ida_ambulancia < tiempo_ida_elegido:
+                        tiempo_ida_elegido = tiempo_ida_ambulancia
+                        ruta_ida_elegido = ruta_ida_ambulancia
                         ambulancia_elegida = ambulancia
 
             if ambulancia_elegida is None:
@@ -288,7 +291,7 @@ class Simulacion:
 
             else:
                 print(f"Ambulancia elegida es: {ambulancia_elegida.id}")
-                ambulancia_elegida.linea_ambulancia.succeed(value={"ruta": ruta_despacho_elegido, "tiempo": tiempo_despacho_elegido})
+                ambulancia_elegida.linea_ambulancia.succeed(value={"ruta": ruta_ida_elegido, "tiempo": tiempo_ida_elegido})
 
     def actualizar_velocidades(self):
         while True:
@@ -301,11 +304,11 @@ class Simulacion:
             self.dias_terminados += 1
 
             resumen = [
-                pd.DataFrame(self.estadisticas["tiempo_acumulado_despacho"], columns=["TIEMPO_DESPACHO"]).describe(
+                pd.DataFrame(self.estadisticas["tiempo_acumulado_ida"], columns=["TIEMPO_IDA"]).describe(
                     percentiles=[.25, .5, .75, .9]),
                 pd.DataFrame(self.estadisticas["tiempo_acumulado_atencion"], columns=['TIEMPO_ATENCION']).describe(
                     percentiles=[.25, .5, .75, .9]),
-                pd.DataFrame(self.estadisticas["tiempo_acumulado_derivacion"], columns=['TIEMPO_DERIVACION']).describe(
+                pd.DataFrame(self.estadisticas["tiempo_acumulado_traslado"], columns=['TIEMPO_TRASLADO']).describe(
                     percentiles=[.25, .5, .75, .9]),
                 pd.DataFrame(self.estadisticas["tiempo_acumulado_espera"], columns=['TIEMPO_ATRASO']).describe(
                     percentiles=[.25, .5, .75, .9]),
@@ -327,11 +330,11 @@ class Simulacion:
     def presentar_estadisticas(self):
         self.dias_terminados += 1
         resumen = [
-            pd.DataFrame(self.estadisticas["tiempo_acumulado_despacho"], columns=["TIEMPO_DESPACHO"]).describe(
+            pd.DataFrame(self.estadisticas["tiempo_acumulado_ida"], columns=["TIEMPO_IDA"]).describe(
                 percentiles=[.25, .5, .75, .9]),
             pd.DataFrame(self.estadisticas["tiempo_acumulado_atencion"], columns=['TIEMPO_ATENCION']).describe(
                 percentiles=[.25, .5, .75, .9]),
-            pd.DataFrame(self.estadisticas["tiempo_acumulado_derivacion"], columns=['TIEMPO_DERIVACION']).describe(
+            pd.DataFrame(self.estadisticas["tiempo_acumulado_traslado"], columns=['TIEMPO_TRASLADO']).describe(
                 percentiles=[.25, .5, .75, .9]),
             pd.DataFrame(self.estadisticas["tiempo_acumulado_espera"], columns=['TIEMPO_ATRASO']).describe(
                 percentiles=[.25, .5, .75, .9]),
@@ -351,7 +354,6 @@ class Simulacion:
         for key, value in self.stat_diario.items():
             value.to_csv(path_or_buf=f"entrega3/test/{key}_diario.csv", index=True, index_label="DIA", sep=";")
 
-
         print(colored(f"Se recibieron {self.estadisticas['llamadas_recibidas']} llamadas", "blue"))
         print(colored(f"Se completaron {len(self.estadisticas['tiempo_acumulado_proceso'])} emergencias", "blue"))
         print(colored(f"Quedaron {len(self.cola_emergencias)} pacientes sin atender", "red"))
@@ -367,7 +369,7 @@ if __name__ == '__main__':
     start_time = time.time()
     fecha_inicial = arrow.get('2021-01-01T00:00:00')
 
-    Simulacion(10)
+    Simulacion(3)
 
     # lista_simulaciones = []
     # for i in range(7):
