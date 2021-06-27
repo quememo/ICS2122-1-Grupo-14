@@ -7,17 +7,29 @@ import matplotlib.pyplot as plt
 import time
 
 
-def alterar_atencion():
-    pandas_eventos = pd.read_csv("./datos/eventos.csv", sep=";")
-    numpy_eventos = pandas_eventos.to_numpy()
-    solo_atenciones = [(evento[4] - 4.2) for evento in numpy_eventos]
-    pd.DataFrame(solo_atenciones).to_csv(path_or_buf=f"datos modificados/solo_atenciones_desplazadas.csv", index=False, header=["NEWATENCION"], sep=";")
+# def alterar_atencion():
+#     pandas_eventos = pd.read_csv("./datos/eventos.csv", sep=";")
+#     numpy_eventos = pandas_eventos.to_numpy()
+#     solo_atenciones = [(evento[4] - 4.2) for evento in numpy_eventos]
+#     pd.DataFrame(solo_atenciones).to_csv(path_or_buf=f"datos modificados/solo_atenciones_desplazadas.csv", index=False, header=["NEWATENCION"], sep=";")
 
 
 def filtrar_muestra():
     pandas_muestra = pd.read_csv("./datos/muestraSGED.csv", sep=",")
     df_filtrados = pandas_muestra.loc[pandas_muestra['x'] <= 46.7]
     df_filtrados.to_csv(path_or_buf=f"datos/muestraSGEDfiltrada.csv", index=False, header=["Atenciones"], sep=";")
+
+
+def filtrar_despacho():
+    pandas_muestra = pd.read_csv("./datos/muestraDespacho.csv", sep=",")
+    df_filtrados = pandas_muestra.loc[pandas_muestra['x'] <= 14.5]
+    df_filtrados.to_csv(path_or_buf=f"datos/muestraDespachofiltrada.csv", index=False, header=["Atenciones"], sep=";")
+
+
+def filtrar_derivacion():
+    pandas_muestra = pd.read_csv("./datos/muestraDerivacion.csv", sep=",")
+    df_filtrados = pandas_muestra.loc[pandas_muestra['x'] <= 31]
+    df_filtrados.to_csv(path_or_buf=f"datos/muestraDerivacionfiltrada.csv", index=False, header=["Atenciones"], sep=";")
 
 
 def random_sged():
