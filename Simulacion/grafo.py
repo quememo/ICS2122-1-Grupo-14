@@ -16,8 +16,8 @@ class ClaseGrafo(object):
 
     def poblar_grafo(self):
         self.informacion_nodos, self.coordenadas_nodos = diccionario_nodos(
-            "K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/nodos.csv",
-            "K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/arcos.csv")
+            "datos/nodos.csv",
+            "datos/arcos.csv")
         for nodo_origen in self.informacion_nodos:
             for nodo_destino in self.informacion_nodos[nodo_origen].keys():
                 esta_distancia = self.informacion_nodos[nodo_origen][nodo_destino]["distancia"]

@@ -548,6 +548,9 @@ class Simulacion:
         for key, value in self.stat_diario.items():
             value.to_csv(path_or_buf=f"entrega3/cores/{self.core}/{key}_diario.csv", index=True, index_label="DIA", sep=";")
 
+        tabla_proceso = pd.DataFrame(self.estadisticas["tiempo_acumulado_proceso"], columns=["MINUTOS"])
+        tabla_proceso.to_csv('tabla_procesos.csv', index=False)
+
         print(colored(f"SISTEMA: Se recibieron {self.estadisticas['llamadas_recibidas']} llamadas", "blue"))
         print(colored(f"SISTEMA: Se completaron {len(self.estadisticas['tiempo_acumulado_proceso'])} emergencias", "blue"))
         print(colored(f"SISTEMA: Quedaron {len(self.cola_emergencias)} emergencias en cola sin atender", "red"))
