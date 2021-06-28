@@ -34,3 +34,6 @@ yarn-error.log*
 .idea
 .Rproj.user
 /__pycache__
+/entrega3
+entrega3/
+entrega3/*

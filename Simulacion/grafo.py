@@ -115,13 +115,39 @@ class ClaseGrafo(object):
 
     def debugear(self):
         # self.calcular_dijkstra(0, 6)
-        self.plotear_grafo()
+        # self.plotear_grafo()
         # nodo_buscado = self.calcular_nodo_cercano((124.8, -1.4))
         # print(f"El nodo más cercano es: {nodo_buscado}")
         # self.calcular_centro_mas_cercano(4065)
         # self.actualizar_arcos(0)
         # for i in range(24):
         #     self.actualizar_arcos(i)
+        bases_radio20 = [
+            [35.1, 45.4],
+            [98.7, 77.8],
+            [58.8, 62],
+            [107.4, 111.3],
+            [80.9, 68.6],
+            [26.1, 0.2],
+            [97.2, 46.3],
+            [29.6, 91.7],
+            [83.6, 40.9],
+            [72.8, -7.1],
+            [33.5, 39.7],
+            [22.1, 82.2],
+            [39.5, 61.9],
+            [54.9, 99.4],
+            [63.4, 82.1],
+            [121.7, -23.5],
+            [4.7, -30.5],
+            [21.7, -20.8],
+            [155.4, -9.2],
+            [131.7, 57.4]
+        ]
+
+        lista_nodos = [self.calcular_nodo_cercano(base) for base in bases_radio20]
+        print(lista_nodos)
+
         pass
 
 

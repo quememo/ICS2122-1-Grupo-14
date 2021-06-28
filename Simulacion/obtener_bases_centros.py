@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def obtener_centros():
-    pandas_centros = pd.read_csv("K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/centros.csv", sep=";")
+    pandas_centros = pd.read_csv("datos/centros.csv", sep=";")
     numpy_centros = pandas_centros.to_numpy()
 
     coordenadas_centros = {}
@@ -15,7 +15,7 @@ def obtener_centros():
 
 
 def obtener_bases():
-    pandas_bases = pd.read_csv("K:/UC/11 semestre/capstone industrial/ICS2122-1-Grupo-14/Simulacion/datos/bases.csv", sep=";")
+    pandas_bases = pd.read_csv("datos/bases.csv", sep=";")
     numpy_bases = pandas_bases.to_numpy()
 
     coordenadas_bases = {}

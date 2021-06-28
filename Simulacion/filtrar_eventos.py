@@ -40,6 +40,22 @@ def random_sged():
     return random_atencion
 
 
+def random_despacho():
+    pandas_muestra = pd.read_csv("./datos/muestraDespachofiltrada.csv", sep=",")
+    numpy_filtrados = pandas_muestra.to_numpy()
+    lista_filtrado = [atencion[0] for atencion in numpy_filtrados]
+    random_atencion = lista_filtrado[randint(0, len(lista_filtrado) - 1)]
+    return random_atencion
+
+
+def random_derivacion():
+    pandas_muestra = pd.read_csv("./datos/muestraDerivacionfiltrada.csv", sep=",")
+    numpy_filtrados = pandas_muestra.to_numpy()
+    lista_filtrado = [atencion[0] for atencion in numpy_filtrados]
+    random_atencion = lista_filtrado[randint(0, len(lista_filtrado) - 1)]
+    return random_atencion
+
+
 def agregar_clusters():
     pandas_eventos = pd.read_csv("./datos/eventos.csv", sep=";")
     pandas_eventos_clusters = pd.read_csv("./datos/eventos_clusterizados.csv", sep=";")
@@ -172,8 +188,34 @@ def obtener_tiempo_entre_eventos():
     return
 
 
+def encontrar_bases_cercanas(coords_base):
+    coords_base = np.array(coords_base)
+    pandas_bases = pd.read_csv("./datos/bases.csv", sep=";")
+    np_bases = pandas_bases.to_numpy()
+
+    dict_variable = {tuple(base): np.linalg.norm(base - np.array(coords_base)) for base in np_bases if not (base == coords_base).all()}
+    dict_variable = {k: v for k, v in sorted(dict_variable.items(), key=lambda item: item[1])}
+
+    iterador = 0
+    coordenadas_bases_cercanas = []
+    for key, value in dict_variable.items():
+        if iterador == 7:
+            break
+        coordenadas_bases_cercanas.append(key)
+        iterador += 1
+
+    return coordenadas_bases_cercanas
+
+
 if __name__ == '__main__':
     # agregar_clusters()
     # obtener_tiempo_entre_eventos()
     # alterar_atencion()
+    # filtrar_despacho()
+    # filtrar_derivacion()
+    # print(random_despacho())
+    # print(random_derivacion())
+
+    # encontrar_bases_cercanas([35.1, 45.4])
+    # encontrar_bases_cercanas([98.7,  77.8])
     pass
