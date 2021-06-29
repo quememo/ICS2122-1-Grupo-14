@@ -1,7 +1,5 @@
 import sys
 import time
-from functools import cache, lru_cache
-from multiprocessing import Process
 import simpy
 import pandas as pd
 import numpy as np
@@ -10,6 +8,7 @@ from termcolor import colored
 from grafo import ClaseGrafo
 from generacion_llamadas import generar_tev, generar_ubicacion
 from filtrar_eventos import random_sged, random_despacho, random_derivacion, encontrar_bases_cercanas
+from multiprocessing import Manager, Process
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1600)
@@ -273,7 +272,8 @@ class Ambulancia:
                 # print(f"Ambulancia {self.id}: No cambié mi decisión, sigo volviendo a la base")
                 if velocidad_final != velocidad_inicial:
                     # print(f"Ambulancia {self.id}: Cambió la velocidad a mitad de arco en REGRESO, recalculo ruta")
-                    new_ruta, new_tiempo_estimado = self.grafo.calcular_dijkstra(self.ubicacion_actual, self.base_original)
+                    new_ruta, new_tiempo_estimado = self.grafo.calcular_dijkstra(self.ubicacion_actual,
+                                                                                 self.base_original)
                     new_ruta.pop(0)
                     ruta = new_ruta
                     continue
@@ -338,7 +338,8 @@ class Ambulancia:
         tiempo_restante_final = 0
         for ambulancia in self.total_ambulancias:
             if ambulancia.en_ida and ambulancia.id != self.id:
-                new_ruta_ida, new_tiempo_ida = self.grafo.calcular_dijkstra(self.ubicacion_actual, ambulancia.destino_actual)
+                new_ruta_ida, new_tiempo_ida = self.grafo.calcular_dijkstra(self.ubicacion_actual,
+                                                                            ambulancia.destino_actual)
                 tiempo_restante = ambulancia.momento_estimado_llegada - self.env.now
 
                 # if tiempo_restante < 0:
@@ -402,32 +403,42 @@ class Simulacion:
             "tiempo_acumulado_atencion": [],
             "tiempo_acumulado_traslado": [],
             "tiempo_acumulado_derivacion": [],
-            "tiempo_acumulado_proceso": [],  # atraso inicial + despacho + ida + atencion + traslado + derivacion (por cada emergencia)
+            "tiempo_acumulado_proceso": [],
+            # atraso inicial + despacho + ida + atencion + traslado + derivacion (por cada emergencia)
             "llamadas_recibidas": 0,
         }
         self.dias_terminados = 0
         self.stat_diario = {
             "count": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "std": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "mean": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "25%": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "50%": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "75%": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "85%": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
             "95%": pd.DataFrame(
-                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO", "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
+                columns=["TIEMPO_ATRASO", "TIEMPO_DESPACHO", "TIEMPO_IDA", "TIEMPO_ATENCION", "TIEMPO_TRASLADO",
+                         "TIEMPO_DERIVACION", "TIEMPO_PROCESO"]),
         }
 
         for i in range(20):
             self.total_ambulancias.append(Ambulancia(
-                self.env, self.grafo, self.nodos_iniciales[i], self.env.event(), self.cola_emergencias, self.estadisticas, self.total_ambulancias))
+                self.env, self.grafo, self.nodos_iniciales[i], self.env.event(), self.cola_emergencias,
+                self.estadisticas, self.total_ambulancias))
 
     @staticmethod
     def cantidad_dias(dias):
@@ -461,7 +472,8 @@ class Simulacion:
                         ubicacion_considerar = ambulancia.ubicacion_actual
                         eleccion_temporal = "en base"
 
-                    ruta_ida_ambulancia, tiempo_ida_ambulancia = self.grafo.calcular_dijkstra(ubicacion_considerar, nodo_emergencia)
+                    ruta_ida_ambulancia, tiempo_ida_ambulancia = self.grafo.calcular_dijkstra(ubicacion_considerar,
+                                                                                              nodo_emergencia)
                     if tiempo_ida_ambulancia < tiempo_ida_elegido:
                         tiempo_ida_elegido = tiempo_ida_ambulancia
                         ruta_ida_elegido = ruta_ida_ambulancia
@@ -477,7 +489,8 @@ class Simulacion:
             else:
                 # print(f"SISTEMA: Ambulancia elegida es: {ambulancia_elegida.id} (Estaba {eleccion_final})")
                 ambulancia_elegida.linea_ambulancia.succeed(
-                    value={"ruta": ruta_ida_elegido, "tiempo": tiempo_ida_elegido, "id": self.estadisticas["llamadas_recibidas"]})
+                    value={"ruta": ruta_ida_elegido, "tiempo": tiempo_ida_elegido,
+                           "id": self.estadisticas["llamadas_recibidas"]})
 
     def actualizar_velocidades(self):
         while True:
@@ -546,16 +559,18 @@ class Simulacion:
                 self.stat_diario[index].loc[self.dias_terminados] = row
 
         for key, value in self.stat_diario.items():
-            value.to_csv(path_or_buf=f"entrega3/cores/{self.core}/{key}_diario.csv", index=True, index_label="DIA", sep=";")
+            value.to_csv(path_or_buf=f"entrega3/cores/{self.core}/{key}_diario.csv", index=True, index_label="DIA",
+                         sep=";")
 
         tabla_proceso = pd.DataFrame(self.estadisticas["tiempo_acumulado_proceso"], columns=["MINUTOS"])
-        tabla_proceso.to_csv('tabla_procesos.csv', index=False)
+        # tabla_proceso.to_csv('tabla_procesos.csv', index=False)
 
         print(colored(f"SISTEMA: Se recibieron {self.estadisticas['llamadas_recibidas']} llamadas", "blue"))
-        print(colored(f"SISTEMA: Se completaron {len(self.estadisticas['tiempo_acumulado_proceso'])} emergencias", "blue"))
+        print(colored(f"SISTEMA: Se completaron {len(self.estadisticas['tiempo_acumulado_proceso'])} emergencias",
+                      "blue"))
         print(colored(f"SISTEMA: Quedaron {len(self.cola_emergencias)} emergencias en cola sin atender", "red"))
 
-        return tabla_resumen
+        return tabla_resumen, self.stat_diario, tabla_proceso
 
     def convertir_bases_a_nodos(self, lista_bases):
         lista_nodos = [self.grafo.calcular_nodo_cercano(base) for base in lista_bases]
@@ -571,15 +586,16 @@ class Simulacion:
         return self.presentar_estadisticas()
 
 
-def iniciar_simulacion(bases_iniciales, core):
+def iniciar_simulacion(bases_iniciales, core, return_dict):
     global fecha_inicial
     fecha_inicial = arrow.get('2021-01-01T00:00:00')
-    una_simulacion = Simulacion(bases_iniciales, 90, core)
-    resumen = una_simulacion.comenzar()
+    una_simulacion = Simulacion(bases_iniciales, 30, core)
+    resumen, stat_diarios, tabla_procesos = una_simulacion.comenzar()
+    return_dict[core] = (resumen, stat_diarios, tabla_procesos)
 
 
-def alterar_bases_iniciales(bases_iniciales):
-    index_ambulancia = 0
+def alterar_bases_iniciales(bases_iniciales, idx_ambulancia):
+    index_ambulancia = idx_ambulancia
     conjunto_bases_iniciales = [bases_iniciales]
     base_modificable = bases_iniciales[index_ambulancia]
 
@@ -592,17 +608,139 @@ def alterar_bases_iniciales(bases_iniciales):
 
 
 def memo_heuristica(bases_iniciales):
-    conjunto_bases = alterar_bases_iniciales(bases_iniciales)
+    metrica_original_global = None
+    metrica_final = None
+    asignacion_base_final = bases_iniciales.copy()
+    stat_diario_final = None
+    stat_diario_inicial = None
+    proceso_original = None
+    proceso_final = None
+
+    for idx_ambulancia in range(20):
+        print(f"Se va a iterar sobre la ambulancia numero {idx_ambulancia}")
+        primer_resultado_sims, conjunto_bases_vecinas = correr_8_simulaciones(asignacion_base_final, idx_ambulancia)
+        print(f"|---------------------FIN SIMULACIONES AMBULANCIA {idx_ambulancia}---------------------------|")
+
+        metrica_base_local, idx_ganador, diferencia_ganador, metrica_ganador = procesar_info_sims(primer_resultado_sims)
+
+        if not metrica_original_global:
+            print(f'ESTO DEBERÍA PRINTEARSE EXCLUSIVAMENTE UNA VEZ')
+
+            metrica_original_global = metrica_base_local  # Metrica radio 20 MCLP
+            metrica_final = metrica_base_local
+            stat_diario_inicial = primer_resultado_sims[0][1]
+            stat_diario_final = primer_resultado_sims[0][1]
+            proceso_original = primer_resultado_sims[0][2]
+            proceso_final = primer_resultado_sims[0][2]
+            # print(type(stat_diario_inicial))
+            # print(type(stat_diario_final))
+            # print((stat_diario_final))
+            # sys.exit()
+            print(f"La metrica final es: {metrica_final}")
+            print(f"la metrica original es: {metrica_original_global}")
+        print()
+        print(f"Para el deep 1 la metrica ganadora es: {metrica_ganador}")
+        print(f"Para el deep 1 la metrica base local es: {metrica_base_local}")
+        print(f"Para el deep 1 la metrica final es: {metrica_final}")
+        diferencia_ganador = metrica_final - metrica_ganador
+        if metrica_ganador < metrica_base_local and metrica_ganador < metrica_final and diferencia_ganador > 3:
+            print(f"Primer deep ambulancia {idx_ambulancia} encontró mejoras")
+            print(f"El ganador es caso: {idx_ganador}")
+            asignacion_base_final = conjunto_bases_vecinas[idx_ganador].copy()
+            metrica_final = metrica_ganador
+            stat_diario_final = primer_resultado_sims[idx_ganador][1]
+            proceso_final = primer_resultado_sims[idx_ganador][2]
+            print(f"Nueva configuracion de bases ambulancia{idx_ambulancia}:")
+            print(asignacion_base_final)
+
+            # Trato de seguir mejorando para la misma ambulancia
+            resultado_esas_simulaciones, new_conjunto_bases_vecinas = correr_8_simulaciones(asignacion_base_final,
+                                                                                            idx_ambulancia)
+
+            print(f"|---------------------FIN SIMULACION DEEP 2 {idx_ambulancia}---------------------------|")
+
+            metrica_base_local, idx_ganador, diferencia_ganador, metrica_ganador = procesar_info_sims(
+                resultado_esas_simulaciones)
+            print()
+            diferencia_ganador = metrica_final - metrica_ganador
+            print(f"Para el deep 2 la metrica ganadora es: {metrica_ganador}")
+            print(f"Para el deep 2 la metrica base local es: {metrica_base_local}")
+            print(f"Para el deep 2 la metrica final es: {metrica_final}")
+
+            if metrica_ganador < metrica_base_local and metrica_ganador < metrica_final and diferencia_ganador > 3:
+                print(f"Segundo deep ambulancia {idx_ambulancia} encontró mejoras")
+                print(f"El ganador es: {idx_ganador}")
+                asignacion_base_final = conjunto_bases_vecinas[idx_ganador].copy()
+                metrica_final = metrica_ganador
+                stat_diario_final = primer_resultado_sims[idx_ganador][1]
+                proceso_final = primer_resultado_sims[idx_ganador][2]
+                print(f"Nueva configuracion de bases ambulancia{idx_ambulancia}:")
+                print(asignacion_base_final)
+                resultado_esas_simulaciones, new_conjunto_bases_vecinas = correr_8_simulaciones(asignacion_base_final,
+                                                                                                idx_ambulancia)
+
+                print(f"|---------------------FIN SIMULACION DEEP 3 {idx_ambulancia}---------------------------|")
+
+                metrica_base_local, idx_ganador, diferencia_ganador, metrica_ganador = procesar_info_sims(
+                    resultado_esas_simulaciones)
+                print()
+                diferencia_ganador = metrica_final - metrica_ganador
+                print(f"Para el deep 3 la metrica ganadora es: {metrica_ganador}")
+                print(f"Para el deep 3 la metrica base local es: {metrica_base_local}")
+                print(f"Para el deep 3 la metrica final es: {metrica_final}")
+                if metrica_ganador < metrica_base_local and metrica_ganador < metrica_final and diferencia_ganador > 3:
+                    print(f"Tercer deep ambulancia {idx_ambulancia} encontró mejoras")
+                    print(f"El ganador es: {idx_ganador}")
+                    asignacion_base_final = conjunto_bases_vecinas[idx_ganador].copy()
+                    metrica_final = metrica_ganador
+                    stat_diario_final = primer_resultado_sims[idx_ganador][1]
+                    proceso_final = primer_resultado_sims[idx_ganador][2]
+                    print(f"Nueva configuracion de bases ambulancia{idx_ambulancia}:")
+                    print(asignacion_base_final)
+                else:
+                    print(f"Tercer deep ambulancia {idx_ambulancia} no encontró mejoras")
+            else:
+                print(f"Segundo deep ambulancia {idx_ambulancia} no encontró mejoras")
+
+        else:
+            print(f"Primer deep ambulancia {idx_ambulancia} no encontró mejoras")
+
+    return asignacion_base_final, metrica_original_global, metrica_final, stat_diario_inicial, stat_diario_final, proceso_original, proceso_final
+
+
+def correr_8_simulaciones(asignacion_bases_caso_zero, idx_ambulancia):
+    manager = Manager()
+    return_dict = manager.dict()
+
+    conjunto_bases = alterar_bases_iniciales(asignacion_bases_caso_zero, idx_ambulancia)
+
     lista_procesos_simulacion = []
     idx_core = 0
     for unas_bases_iniciales in conjunto_bases:
-        proceso = Process(target=iniciar_simulacion, args=(unas_bases_iniciales, idx_core))
+        proceso = Process(target=iniciar_simulacion, args=(unas_bases_iniciales, idx_core, return_dict))
         idx_core += 1
         lista_procesos_simulacion.append(proceso)
         proceso.start()
 
     for cada_proceso in lista_procesos_simulacion:
         cada_proceso.join()
+
+    return return_dict, conjunto_bases
+
+
+def procesar_info_sims(resultado_cada_simulacion):
+    copia_resultados = resultado_cada_simulacion.copy()
+    df_resumen_original_global = copia_resultados.pop(0)
+    metrica_base_local = df_resumen_original_global[0]['TIEMPO_PROCESO']['95%']
+
+    metricas_vecinos = {key: value[0]['TIEMPO_PROCESO']['95%'] for key, value in copia_resultados.items()}
+    print(metricas_vecinos)
+
+    idx_ganador = min(metricas_vecinos, key=metricas_vecinos.get)
+    metrica_ganador = metricas_vecinos[idx_ganador]
+    diferencia_ganador = metrica_base_local - metrica_ganador
+
+    return metrica_base_local, idx_ganador, diferencia_ganador, metrica_ganador
 
 
 if __name__ == '__main__':
@@ -631,6 +769,26 @@ if __name__ == '__main__':
         [131.7, 57.4]
     ]
 
-    memo_heuristica(bases_radio20_mlcp)
+    asignacion_final_final, metrica_global_inicial, metrica_final_final, stat_inicial, stat_final, detalle_original, detalle_final = memo_heuristica(
+        bases_radio20_mlcp)
+    for this_key, this_value in stat_inicial.items():
+        this_value.to_csv(path_or_buf=f"entrega3/resultados_iniciales/{this_key}_diario.csv",
+                          index=True, index_label="DIA", sep=";")
+
+    for this_key, this_value in stat_final.items():
+        this_value.to_csv(path_or_buf=f"entrega3/resultados_finales/{this_key}_diario.csv",
+                          index=True, index_label="DIA", sep=";")
+
+    detalle_original.to_csv(path_or_buf=f"entrega3/resultados_iniciales/proceso_inicial.csv",
+                            index=True, index_label="DIA", sep=";")
+
+    detalle_final.to_csv(path_or_buf=f"entrega3/resultados_finales/proceso_final.csv",
+                         index=True, index_label="DIA", sep=";")
+
+    print(f"TERMINO LA MEMO HEURISTICA HURRA")
+    print(f"ASIGNACION FINAL")
+    print(f'{asignacion_final_final}')
+    print(f'Metrica global inicial: {metrica_global_inicial}')
+    print(f'Metrica final final: {metrica_final_final}')
 
     print(colored(f"\n IRL Exec: {(time.time() - start_time) / 60} minutos", 'blue'))
