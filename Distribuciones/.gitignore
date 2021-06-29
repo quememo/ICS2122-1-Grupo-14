@@ -33,3 +33,6 @@ yarn-error.log*
 # R stuff
 .idea
 .Rproj.user
+/Fotos estabilizacion
+Fotos estabilizacion/
+Fotos estabilizacion/*
