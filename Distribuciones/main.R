@@ -383,3 +383,75 @@ gofstat(fit_tev22)
 fit_tev23 <- fitdist(tev23$TEV, method = "mle", distr="gamma", start = list(shape= 0.90140  , rate =  0.01195))
 plot(fit_tev23)
 gofstat(fit_tev23)
+
+
+# Entrega 3
+
+mean_diario <- read.csv2(file='../Simulacion/entrega3/estabilizacion/mean_diario.csv', dec = '.')
+plot(mean_diario$DIA, mean_diario$TIEMPO_DESPACHO,main = "Tiempo promedio despacho", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(mean_diario$DIA, mean_diario$TIEMPO_ATENCION, main = "Tiempo promedio atencion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos", ylim = c(15,17))
+plot(mean_diario$DIA, mean_diario$TIEMPO_DERIVACION, main = "Tiempo promedio derivacion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(mean_diario$DIA, mean_diario$TIEMPO_ATRASO, main = "Tiempo promedio atraso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(mean_diario$DIA, mean_diario$TIEMPO_PROCESO, main = "Tiempo promedio proceso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+diario25 <- read.csv2(file='../Simulacion/entrega3/estabilizacion/25%_diario.csv', dec = '.')
+plot(diario25$DIA, diario25$TIEMPO_DESPACHO,main = "Tiempo 25% despacho", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario25$DIA, diario25$TIEMPO_ATENCION, main = "Tiempo 25% atencion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos",ylim = c(7,9))
+plot(diario25$DIA, diario25$TIEMPO_DERIVACION, main = "Tiempo 25% derivacion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos",ylim = c(14,18))
+plot(diario25$DIA, diario25$TIEMPO_ATRASO, main = "Tiempo 25% atraso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario25$DIA, diario25$TIEMPO_PROCESO, main = "Tiempo 25% proceso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+diario50 <- read.csv2(file='../Simulacion/entrega3/estabilizacion/50%_diario.csv', dec = '.')
+plot(diario50$DIA, diario50$TIEMPO_DESPACHO,main = "Tiempo 50% despacho", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario50$DIA, diario50$TIEMPO_ATENCION, main = "Tiempo 50% atencion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos", ylim = c(12,15))
+plot(diario50$DIA, diario50$TIEMPO_DERIVACION, main = "Tiempo 50% derivacion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario50$DIA, diario50$TIEMPO_ATRASO, main = "Tiempo 50% atraso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario50$DIA, diario50$TIEMPO_PROCESO, main = "Tiempo 50% proceso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+diario75 <- read.csv2(file='../Simulacion/entrega3/estabilizacion/75%_diario.csv', dec = '.')
+plot(diario75$DIA, diario75$TIEMPO_DESPACHO,main = "Tiempo 75% despacho", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario75$DIA, diario75$TIEMPO_ATENCION, main = "Tiempo 75% atencion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos",ylim = c(19,22))
+plot(diario75$DIA, diario75$TIEMPO_DERIVACION, main = "Tiempo 75% derivacion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario75$DIA, diario75$TIEMPO_ATRASO, main = "Tiempo 75% atraso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario75$DIA, diario75$TIEMPO_PROCESO, main = "Tiempo 75% proceso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+diario90 <- read.csv2(file='../Simulacion/entrega3/estabilizacion/90%_diario.csv', dec = '.')
+plot(diario90$DIA, diario90$TIEMPO_DESPACHO,main = "Tiempo 90% despacho", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario90$DIA, diario90$TIEMPO_ATENCION, main = "Tiempo 90% atencion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos",ylim = c(28,30))
+plot(diario90$DIA, diario90$TIEMPO_DERIVACION, main = "Tiempo 90% derivacion",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario90$DIA, diario90$TIEMPO_ATRASO, main = "Tiempo 90% atraso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+plot(diario90$DIA, diario90$TIEMPO_PROCESO, main = "Tiempo 90% proceso",type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+# Nuevas VA
+
+hist(eventos$DESPACHO, main = "Histograma tiempos despacho", freq = FALSE, breaks = 50, xlab="Minutos", ylab="Densidad")
+model_select(eventos$DESPACHO, models = modelos_sin_naka, criterion = c("aic"))
+lines(dsged(c(0:100),mean = 4.153, sd=3.114 ,  nu = 1.318, xi = 107.802  ), lwd=2, col= "red")
+
+muestraDespacho <- rsged(10000, mean = 4.153, sd=3.114 ,  nu = 1.318, xi = 107.802)
+summary(muestraDespacho)
+write.csv(muestraDespacho,'muestraDespacho.csv', row.names = FALSE)
+hist(muestraDespacho, main = "Histograma Despacho", freq = FALSE, breaks = 50, xlab="Minutos", ylab="Densidad")
+
+muestraDerivacion <- rsged(10000, mean = 11.303, sd=6.764  ,  nu = 1.512, xi = 2327.423)
+summary(muestraDerivacion)
+write.csv(muestraDerivacion,'muestraDerivacion.csv', row.names = FALSE)
+hist(muestraDerivacion, main = "Histograma Derivacion", freq = FALSE, breaks = 50,  xlab="Minutos", ylab="Densidad")
+
+despachoFiltrado <- read.csv2(file='../Simulacion/datos/muestraDespachofiltrada.csv', dec = '.')
+derivacionFiltrado <- read.csv2(file='../Simulacion/datos/muestraDerivacionfiltrada.csv', dec = '.')
+summary(despachoFiltrado)
+summary(derivacionFiltrado)
+
+# Estabilizacion v6 base vs cercanos
+casobase_v6_mean <- read.csv2(file='../Simulacion/entrega3/cores/0/mean_diario.csv', dec = '.')
+plot(casobase_v6_mean$DIA, casobase_v6_mean$TIEMPO_PROCESO,main = "Promedio proceso base", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos", ylim = c(100,250))
+
+casobase_v6_95 <- read.csv2(file='../Simulacion/entrega3/cores/0/95%_diario.csv', dec = '.')
+lines(casobase_v6_95$DIA, casobase_v6_95$TIEMPO_PROCESO,main = "95% proceso base", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+caso4_v6_95 <- read.csv2(file='../Simulacion/entrega3/cores/4/95%_diario.csv', dec = '.')
+plot(caso4_v6_95$DIA, caso4_v6_95$TIEMPO_PROCESO,main = "95% proceso caso 4", type = "b", pch = 19, col = "red", xlab = "Dias", ylab = "Minutos")
+
+lines(caso4_v6_95$DIA, caso4_v6_95$TIEMPO_PROCESO, type = "b", pch = 19, col = "blue",)
+

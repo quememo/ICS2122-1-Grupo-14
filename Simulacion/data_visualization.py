@@ -4,37 +4,50 @@ import numpy as np
 from matplotlib import pyplot
 
 if __name__ == '__main__':
-    tablas_finales_25 = pd.read_csv(f"./entrega3/resultados_finales/25%_diario.csv", sep=";")
-    tablas_finales_50 = pd.read_csv(f"./entrega3/resultados_finales/50%_diario.csv", sep=";")
-    tablas_finales_75 = pd.read_csv(f"./entrega3/resultados_finales/75%_diario.csv", sep=";")
-    tablas_finales_85 = pd.read_csv(f"./entrega3/resultados_finales/85%_diario.csv", sep=";")
-    tablas_finales_95 = pd.read_csv(f"./entrega3/resultados_finales/95%_diario.csv", sep=";")
-    tablas_finales_mean = pd.read_csv(f"./entrega3/resultados_finales/mean_diario.csv", sep=";")
-    tablas_iniciales_95 = pd.read_csv(f"./entrega3/resultados_iniciales/95%_diario.csv", sep=";")
-    # print((conjunto_tablas[0]['TIEMPO_PROCESO'].rename("UNO")))
+    # INICIALES
+    tablas_iniciales_25 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/25%_diario.csv", sep=";")
+    tablas_iniciales_50 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/50%_diario.csv", sep=";")
+    tablas_iniciales_75 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/75%_diario.csv", sep=";")
+    tablas_iniciales_85 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/85%_diario.csv", sep=";")
+    tablas_iniciales_95 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/95%_diario.csv", sep=";")
+    tablas_iniciales_mean = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_iniciales/mean_diario.csv", sep=";")
 
-    data_preproc = pd.DataFrame({
-        'DIA': tablas_iniciales_95["DIA"],
-        '0': tablas_iniciales_95['TIEMPO_PROCESO'],
-        '1': tablas_finales_95['TIEMPO_PROCESO'],
-        # '2': conjunto_tablas[2]['TIEMPO_PROCESO'],
-        # '3': conjunto_tablas[3]['TIEMPO_PROCESO'],
-        # '4': conjunto_tablas[4]['TIEMPO_PROCESO'],
-        # '5': conjunto_tablas[5]['TIEMPO_PROCESO'],
-        # '6': conjunto_tablas[6]['TIEMPO_PROCESO'],
-        # '7': conjunto_tablas[7]['TIEMPO_PROCESO'],
-    })
-    detalle_final = pd.DataFrame({
-        'DIA': tablas_iniciales_95["DIA"],
-        'MEAN': tablas_finales_mean['TIEMPO_PROCESO'],
-        '25%': tablas_finales_25['TIEMPO_PROCESO'],
-        '50%': tablas_finales_50['TIEMPO_PROCESO'],
-        '75%': tablas_finales_75['TIEMPO_PROCESO'],
-        '85%': tablas_finales_85['TIEMPO_PROCESO'],
-        '95%': tablas_finales_95['TIEMPO_PROCESO'],
+    # FINALES
+    tablas_finales_25 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/25%_diario.csv", sep=";")
+    tablas_finales_50 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/50%_diario.csv", sep=";")
+    tablas_finales_75 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/75%_diario.csv", sep=";")
+    tablas_finales_85 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/85%_diario.csv", sep=";")
+    tablas_finales_95 = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/95%_diario.csv", sep=";")
+    tablas_finales_mean = pd.read_csv(f"./resultados finales/comparacion algoritmo recursivo/resultados_finales/mean_diario.csv", sep=";")
+
+    inicial_proceso_percentiles = pd.DataFrame({
+        'Dia': tablas_iniciales_mean["DIA"],
+        'Promedio': tablas_iniciales_mean['TIEMPO_PROCESO'],
+        'Percentil 25%': tablas_iniciales_25['TIEMPO_PROCESO'],
+        'Percentil 50%': tablas_iniciales_50['TIEMPO_PROCESO'],
+        'Percentil 75%': tablas_iniciales_75['TIEMPO_PROCESO'],
+        'Percentil 85%': tablas_iniciales_85['TIEMPO_PROCESO'],
+        'Percentil 95%': tablas_iniciales_95['TIEMPO_PROCESO'],
     })
 
-    sns.lineplot(x='DIA', y='Minutos', hue='variable',
-                 data=pd.melt(detalle_final, ['DIA'], value_name="Minutos"))
+    inicial_desglose_tiempos_95 = pd.DataFrame({
+        'Dia': tablas_iniciales_95["DIA"],
+        'Espera en cola': tablas_iniciales_95['TIEMPO_ATRASO'],
+        'Despacho': tablas_iniciales_95['TIEMPO_DESPACHO'],
+        'Traslado hacia emergencia': tablas_iniciales_95['TIEMPO_IDA'],
+        'Atención prehospitalaria': tablas_iniciales_95['TIEMPO_ATENCION'],
+        'Traslado hacia centro': tablas_iniciales_95['TIEMPO_TRASLADO'],
+        'Derivacion': tablas_iniciales_95['TIEMPO_DERIVACION'],
+        'Proceso completo': tablas_iniciales_95['TIEMPO_PROCESO'],
+    })
+
+    versus = pd.DataFrame({
+        'Dia': tablas_iniciales_95["DIA"],
+        'Asignación Inicial': tablas_iniciales_95['TIEMPO_PROCESO'],
+        'Asignación Eficiente': tablas_finales_95['TIEMPO_PROCESO'],
+    })
+
+    sns.relplot(x='Dia', y='Minutos', hue='Tiempos de proceso', kind="line", height=6, aspect=2,
+                data=pd.melt(versus, ['Dia'], value_name="Minutos", var_name="Tiempos de proceso"))
 
     pyplot.show()

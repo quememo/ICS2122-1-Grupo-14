@@ -198,31 +198,31 @@ class Ambulancia:
         #     self.env.process(self.moverse_a_destino(ruta_cercana, tiempo_cercano))
         #     return True
 
-        ambulancia_robable, ruta_robo, tiempo_robo, ganancia_robo = self.encontrar_emergencia_robable()
+        ambulancia_reasignable, ruta_reasignable, tiempo_reasignar, ganancia = self.encontrar_emergencia_reasignable()
 
-        if ambulancia_robable:
-            # print(f"Ambulancia {self.id}: Le robo a Ambulancia {ambulancia_robable.id} la emergencia {ambulancia_robable.emergencia_en_curso}")
-            self.emergencia_en_curso = ambulancia_robable.emergencia_en_curso
-            ambulancia_robable.abortar = True
-            ambulancia_robable.en_ida = False
-            ambulancia_robable.destino_actual = None
-            self.time_atendido = ambulancia_robable.time_atendido
+        if ambulancia_reasignable:
+            # print(f"Ambulancia {self.id}: Le robo a Ambulancia {ambulancia_reasignable.id} la emergencia {ambulancia_reasignable.emergencia_en_curso}")
+            self.emergencia_en_curso = ambulancia_reasignable.emergencia_en_curso
+            ambulancia_reasignable.abortar = True
+            ambulancia_reasignable.en_ida = False
+            ambulancia_reasignable.destino_actual = None
+            self.time_atendido = ambulancia_reasignable.time_atendido
 
-            self.env.process(self.moverse_a_destino(ruta_robo, tiempo_robo))
+            self.env.process(self.moverse_a_destino(ruta_reasignable, tiempo_reasignar))
             return True
 
-        # elif ambulancia_robable and not emergencia_cercana:
+        # elif ambulancia_reasignable and not emergencia_cercana:
         #         #     print(f"Ambulancia {self.id}: Efectivamente realizo el robo, ya que no hay cola")
-        #     self.emergencia_en_curso = ambulancia_robable.emergencia_en_curso
-        #     ambulancia_robable.abortar = True
-        #     ambulancia_robable.en_ida = False
-        #     ambulancia_robable.destino_actual = None
-        #     self.time_atendido = ambulancia_robable.time_atendido
+        #     self.emergencia_en_curso = ambulancia_reasignable.emergencia_en_curso
+        #     ambulancia_reasignable.abortar = True
+        #     ambulancia_reasignable.en_ida = False
+        #     ambulancia_reasignable.destino_actual = None
+        #     self.time_atendido = ambulancia_reasignable.time_atendido
         #
-        #     self.env.process(self.moverse_a_destino(ruta_robo, tiempo_robo))
+        #     self.env.process(self.moverse_a_destino(ruta_reasignable, tiempo_reasignar))
         #     return True
 
-        # elif not ambulancia_robable and emergencia_cercana:
+        # elif not ambulancia_reasignable and emergencia_cercana:
         #     # SOLO EMERGENCIA EN COLA
         #         #     # print(f"Ambulancia {self.id}: Solo puedo atender la cola")
         #     self.cola_emergencias.remove(emergencia_cercana)
@@ -329,7 +329,7 @@ class Ambulancia:
         else:
             return False
 
-    def encontrar_emergencia_robable(self):
+    def encontrar_emergencia_reasignable(self):
         total_ganancias = []
         ambulancia_target = None
         ganancia_target = 0
